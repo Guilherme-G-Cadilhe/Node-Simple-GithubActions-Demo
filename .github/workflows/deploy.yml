@@ -1,0 +1,70 @@
+# .github/workflows/deploy.yml
+name: Deploy project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build: # Job para construir o projeto e gerar artefatos
+    runs-on: ubuntu-latest
+    container:
+      image: node:20
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Build project
+        run: npm run build
+      - name: Upload build artifact # Upload do resultado do build como artefato
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-app-build
+          path: ./dist # Apenas a pasta 'dist' é o artefato final
+          retention-days: 1 # Manter o artefato por 1 dia
+
+  deploy: # Job para realizar o deploy, dependendo do build
+    needs: build # Este job só roda se o job 'build' for bem-sucedido
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact # Baixa o artefato gerado pelo job 'build'
+        uses: actions/download-artifact@v3
+        with:
+          name: node-app-build
+          path: ./downloaded-build # Os arquivos serão baixados para esta pasta
+
+      # As próximas etapas são para simular o deploy com 'act'
+      # Para um deploy real, você usaria seus comandos scp/ssh originais aqui.
+
+      - name: Get SSH Key and Set Permissions (Simulated)
+        run: |
+          echo "Simulando a configuração da chave SSH..."
+          # Para 'act', esta parte não precisa de uma chave real, mas o echo mostra a intenção.
+          # Se você quisesse testar a sintaxe, poderia criar um arquivo dummy:
+          # mkdir -p ~/.ssh
+          # echo "dummy_key" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+
+      - name: Deploy (Simulated for local testing with act)
+        run: |
+          echo "Simulando o deploy dos artefatos de build para o host remoto..."
+          echo "Seria copiado: scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r ./downloaded-build/dist/* ${{secrets.SSH_USER}}@${{secrets.SSH_HOST}}:~/node-app"
+
+          # Para ver uma ação local, você pode copiar para uma pasta temporária:
+          mkdir -p /tmp/simulated-remote/node-app
+          cp -r ./downloaded-build/dist/* /tmp/simulated-remote/node-app
+          echo "Arquivos da pasta 'dist' copiados localmente para /tmp/simulated-remote/node-app"
+          ls -la /tmp/simulated-remote/node-app
+
+      - name: Restart (Simulated for local testing with act)
+        run: |
+          echo "Simulando o comando de restart remoto..."
+          echo "Seria executado: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{secrets.SSH_USER}}@${{secrets.SSH_HOST}} \"cd node-app && npm install && pm2 restart 0\""
+
+          # Você pode simular a execução de um comando local que represente o restart:
+          touch /tmp/simulated-remote/node-app/restart-flag.txt
+          echo "Comando de restart simulado. Verifique /tmp/simulated-remote/node-app/restart-flag.txt"

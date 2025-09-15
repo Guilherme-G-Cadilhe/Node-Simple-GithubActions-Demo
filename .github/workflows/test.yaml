@@ -1,3 +1,4 @@
+# .github/workflows/test.yaml
 name: Test Actions
 
 on:
@@ -12,11 +13,19 @@ jobs:
       image: node:20
     steps:
       - uses: actions/checkout@v3
+      - name: Setup Node.js # Correção: Usar actions/setup-node
+        uses: actions/setup-node@v3
         with:
           node-version: 20
       - name: Install dependencies
         run: npm ci
       - name: Run tests
         run: npm test
-      - name: Build
+      - name: Build project # O build também é importante no CI para garantir que o projeto compila
         run: npm run build
+      - name: Upload build artifact # Opcional: Upload do build do CI para ser usado por outros jobs ou para inspeção
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-app-ci-build
+          path: ./dist
+          retention-days: 1
